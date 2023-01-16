@@ -10,6 +10,7 @@ import numpy as np
 import concurrent
 import numpy.random as npr
 from tensorflow.keras.layers import Dense
+import time
 
 
 import random
@@ -131,8 +132,7 @@ def choose_random_move(board):
   moves = get_available_moves(board)
 
   # Choose a random move from the list
-  #move = random.choice(moves)
-  move=moves[0]
+  move = random.choice(moves)
   return move
 
 def make_move(board, move, player):
@@ -182,23 +182,19 @@ def check_move(board, move):
 
 def choose_move(board, nn):
     input_data = create_input_data(board)
-    prediction = nn[0].predict(input_data,verbose=0)
-    print(prediction)
-    best_moves = sorted(range(len(prediction)), key=lambda i: prediction[i])[-9:]
+    prediction = nn.predict(input_data,verbose=0)[0]
+    best_moves =  np.argsort(prediction)[::-1]
     for i in best_moves:
-        if check_move(board, i):
-            return i
-    raise ValueError("No valid move found")
+      if check_move(board, i):
+          return i
 
 def choose_move_opp(board, nn):
     input_data = create_input_data_opp(board)
     prediction = nn.predict(input_data,verbose=0)[0]
-    best_moves = sorted(range(len(prediction)), key=lambda i: prediction[i])[-9:]
+    best_moves = np.argsort(prediction)[::-1]
     for i in best_moves:
         if check_move(board, i):
             return i
-    raise ValueError("No valid move found")
-
 
 def check_winner(board):
   # Check rows
@@ -331,7 +327,7 @@ def evaluate_population_rando(population, num_games, use_threading=False):
     for nn in population:
       scores.append(evaluate_nn(nn, num_games))
   return scores
-def evaluate_population(population, use_threading=True):
+def evaluate_population(population, use_threading=False):
     if use_threading:
         # Get the number of CPU cores
         num_cores = os.cpu_count()
@@ -400,7 +396,7 @@ while True:
   # Evaluate the performance of each neural network by having it play num_games self-play games
   scores = []
   printscores= []
-  scores = evaluate_population_rando(population, num_games, use_threading=True)
+  scores = evaluate_population_rando(population, num_games, use_threading=False)
   #scores = evaluate_population(population, use_threading=False )
   average_score = sum(scores) / len(scores)
   print(f"Average score: {average_score}")
